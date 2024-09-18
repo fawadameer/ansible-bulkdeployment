@@ -1,0 +1,168 @@
+Hello Everyone Welcome to Future on cloud
+https://www.youtube.com/futureoncloud
+
+Windows Subsystem for Linux
+
+Verify which WSL currently running
+==================================================================================================================
+| If you have already installed any version of Ubuntu and wanted to remove it then execute the following comamnd.   |
+|                                                                                                                   |
+| wsl --unregister Ubuntu-24.04                                                                                     |
+| # in my case Ubuntu-24.04                                                                                         |
+==================================================================================================================  
+
+PS C:\Windows\System32> wsl --list --verbose
+  NAME            STATE           VERSION
+* Ubuntu          Stopped         1
+  Ubuntu-24.04    Stopped         1
+Run the following command if you wanted to set the Default OS if you are running more than 1 OS.
+
+PS C:\Windows\System32> wsl --set-default Ubuntu-24.04
+The operation completed successfully.
+PS C:\Windows\System32> wsl --list --verbose
+  NAME            STATE           VERSION
+* Ubuntu-24.04    Stopped         1
+  Ubuntu          Stopped         1
+PS C:\Windows\System32>
+=========================================================
+PS C:\Windows\System32> wsl --set-default Ubuntu  #This version is required for ansible
+=========================================================
+********************************
+*   New Deployment of Ubuntu   *
+********************************
+PS C:\Windows\System32> wsl --list --online
+The following is a list of valid distributions that can be installed.
+Install using 'wsl.exe --install <Distro>'.
+
+NAME                            FRIENDLY NAME
+Ubuntu                          Ubuntu
+Debian                          Debian GNU/Linux
+kali-linux                      Kali Linux Rolling
+Ubuntu-18.04                    Ubuntu 18.04 LTS
+Ubuntu-20.04                    Ubuntu 20.04 LTS
+Ubuntu-22.04                    Ubuntu 22.04 LTS
+Ubuntu-24.04                    Ubuntu 24.04 LTS
+OracleLinux_7_9                 Oracle Linux 7.9
+OracleLinux_8_7                 Oracle Linux 8.7
+OracleLinux_9_1                 Oracle Linux 9.1
+openSUSE-Leap-15.6              openSUSE Leap 15.6
+SUSE-Linux-Enterprise-15-SP5    SUSE Linux Enterprise 15 SP5
+SUSE-Linux-Enterprise-15-SP6    SUSE Linux Enterprise 15 SP6
+openSUSE-Tumbleweed             openSUSE Tumbleweed
+
+PS C:\Windows\System32> wsl install -d Ubuntu
+Once installation completed run the following command to verify the version.
+lsb_release -a
+sudo su
+apt update
+apt install software-properties-common
+add-apt-repository --yes --update ppa:ansible/ansible
+#Install Ansible
+apt install ansible
+ansible --version
+#Install Python3
+apt install python3
+#install PIP
+apt install pip
+#install PIP Pyvmomi
+pip install pyvmomi
+pip install pyVim
+#ping test with local host
+ansible -m ping localhost
+ 
+#edit host file to add IP address of your host server.
+ vim /etc/ansible/hosts
+Press i to edit the file.
+
+10.10.10.50  #you have to mention your venter server IP
+Press Esc :wq to save and exit.
+To View the host file
+cat /etc/ansible/hosts
+# Now mount your drive where you have save your yaml file. In my case it is in C:\Ansible
+ cd /mnt/c/Ansible/
+
+root@Fawad-Lap:/mnt/c/Ansible# ls
+BulkDeployment.yml  newvm.yml
+ 
+root@Fawad-Lap:/mnt/c/Ansible# ansible-playbook newvm.yml
+
+PLAY [Create a VM on VMware] *******************************************************************************************
+
+TASK [Create a new VM from template] ***********************************************************************************
+changed: [localhost]
+
+PLAY RECAP *************************************************************************************************************
+localhost                  : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+root@Fawad-Lap:/mnt/c/Ansible#
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+YAML File code:
+
+---
+- name: Create a VM from a template
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+  - name: Create VM for Prod
+    vmware_guest:
+      hostname: 10.154.100.5
+      username: administrator@vsphere.local
+      password: Password@123
+      validate_certs: False
+      name: FOCVM01
+      template: Srv2016UpdateOct
+      datacenter: DNMC
+      cluster: Cluster
+      resource_pool: "Training"
+      datastore: DS_SCADA04
+      disk:
+      - size_gb: 200
+        type: thin
+        datastore: DS_SCADA04
+      hardware:
+       num_cpus: 4
+       memory_mb: 8024
+      networks:
+      - name: DP_DSS
+        # Distributed Port Group name is DP_DSS
+        ip: 10.154.30.171
+        netmask: 255.255.255.0
+        gateway: 10.154.30.254
+        dns_servers:
+        - 110.154.100.1
+        - 10.154.40.1
+      wait_for_ip_address: no
+      folder: Template
+      state: poweredon
+  - name: Create VM for Prod
+    vmware_guest:
+      hostname: 10.154.100.5
+      username: administrator@vsphere.local
+      password: Password@123
+      validate_certs: False
+      name: FOCVM02
+      template: Srv2016UpdateOct
+      datacenter: DNMC
+      cluster: Cluster
+      resource_pool: "Training"
+      datastore: DS_SCADA04
+      disk:
+      - size_gb: 100
+        type: thin
+        datastore: DS_SCADA04
+      hardware:
+       num_cpus: 4
+       memory_mb: 8024
+      networks:
+      - name: DP_DSS
+        # Distributed Port Group name is DP_DSS
+        ip: 10.154.30.172
+        netmask: 255.255.255.0
+        gateway: 10.154.30.254
+        dns_servers:
+        - 110.154.100.1
+        - 10.154.40.1
+      wait_for_ip_address: no
